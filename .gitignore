@@ -1,0 +1,24 @@
+# Секретные файлы
+.env
+*.env
+
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Файлы базы данных
+*.db
+*.sqlite
+*.sqlite3
+
+# Кэш Python
+__pycache__/
+*.pyc
+
+# Файлы редактора/IDE
+.vscode/
+.idea/
+
+# Системные файлы
+.DS_Store
