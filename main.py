@@ -7,7 +7,9 @@ from config import BOT_TOKEN
 from bot.handlers import router
 
 # Настройка логирования
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='bot.log', level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
 
 async def main():
     # Инициализация бота и диспетчера
@@ -24,6 +26,7 @@ async def main():
         logging.error(f"Ошибка при запуске бота: {e}")
     finally:
         await bot.session.close()
+
 
 if __name__ == '__main__':
     asyncio.run(main())

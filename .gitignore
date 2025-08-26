@@ -23,3 +23,4 @@ __pycache__/
 # Системные файлы
 .DS_Store
 
+/bot.log

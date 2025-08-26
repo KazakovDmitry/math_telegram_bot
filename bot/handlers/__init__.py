@@ -6,5 +6,5 @@ router = Router()
 
 # Подключаем обработчики из модулей
 router.include_router(start.router)
-router.include_router(common.router)
 router.include_router(math_training.router)
+router.include_router(common.router)

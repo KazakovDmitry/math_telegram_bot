@@ -1,4 +1,6 @@
+import logging
 import random
+import re
 
 
 class MathTutor:
@@ -66,12 +68,42 @@ class MathTutor:
         if operation == '+':
             return a + b
 
+    # def validate_decomposition(self, user_input: str, expected_parts: tuple) -> bool:
+    #     """
+    #     Проверяет правильность разбиения числа пользователем
+    #     """
+    #     try:
+    #         user_parts = tuple(map(int, user_input.split()))
+    #         return user_parts == expected_parts
+    #     except (ValueError, TypeError):
+    #         return False
+
     def validate_decomposition(self, user_input: str, expected_parts: tuple) -> bool:
         """
         Проверяет правильность разбиения числа пользователем
+        с улучшенной обработкой ввода и логированием
         """
         try:
-            user_parts = tuple(map(int, user_input.split()))
-            return user_parts == expected_parts
-        except (ValueError, TypeError):
+            # Логируем ввод и ожидаемые значения
+            logging.debug(f"User input: '{user_input}', expected: {expected_parts}")
+
+            # Удаляем все нецифровые символы, кроме пробелов
+            cleaned_input = re.sub(r'[^\d\s]', '', user_input.strip())
+            # Разбиваем на части и фильтруем пустые строки
+            parts = [p for p in cleaned_input.split() if p]
+
+            if len(parts) != 2:
+                logging.debug(f"Invalid number of parts: {len(parts)}")
+                return False
+
+            user_parts = tuple(map(int, parts))
+            # Проверяем оба варианта порядка чисел
+            is_valid = (user_parts == expected_parts or
+                        user_parts == expected_parts[::-1])
+
+            logging.debug(f"Validation result: {is_valid}")
+            return is_valid
+
+        except (ValueError, TypeError) as e:
+            logging.debug(f"Validation error: {e}")
             return False
