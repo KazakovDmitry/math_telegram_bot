@@ -89,14 +89,19 @@ class MathTutor:
 
             # Удаляем все нецифровые символы, кроме пробелов
             cleaned_input = re.sub(r'[^\d\s]', '', user_input.strip())
+            logging.debug(f"Cleaned input: '{cleaned_input}'")
+
             # Разбиваем на части и фильтруем пустые строки
             parts = [p for p in cleaned_input.split() if p]
+            logging.debug(f"Parsed parts: {parts}")
 
             if len(parts) != 2:
                 logging.debug(f"Invalid number of parts: {len(parts)}")
                 return False
 
             user_parts = tuple(map(int, parts))
+            logging.debug(f"User parts as integers: {user_parts}")
+
             # Проверяем оба варианта порядка чисел
             is_valid = (user_parts == expected_parts or
                         user_parts == expected_parts[::-1])

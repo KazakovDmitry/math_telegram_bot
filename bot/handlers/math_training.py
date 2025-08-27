@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import Router, types
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -27,7 +29,9 @@ async def select_level(message: types.Message, state: FSMContext):
     user_sessions[message.from_user.id] = {
         "tutor": tutor,
         "level": level,
-        "attempts": 0  # Счетчик попыток
+        "attempts": 0,  # Счетчик попыток
+        "correct_answers": 0,   # система баллов для мотивации
+        "total_questions": 0
     }
 
     await state.set_state(MathTraining.waiting_for_decomposition)
@@ -82,18 +86,26 @@ async def generate_example(message: types.Message, state: FSMContext):
 
 
 @router.message(MathTraining.waiting_for_decomposition)
-async def handle_decomposition(message: types.Message, state: FSMContext, attempts=0):
+async def handle_decomposition(message: types.Message, state: FSMContext):
     user_data = user_sessions.get(message.from_user.id)
+    logging.debug(f"User data: {user_data}")
+
     if not user_data or "current_example" not in user_data:
+        logging.debug("No user data or current example found")
         await message.answer("Что-то пошло не так. Давай начнем сначала.", reply_markup=get_main_menu())
         await state.clear()
         return
 
     example = user_data["current_example"]
     tutor = user_data["tutor"]
+    logging.debug(f"Current example: {example}")
 
     # Получаем текущее количество попыток
     attempts = user_data.get("attempts", 0)
+
+    # Получаем текущее количество баллов
+    correct_answers = user_data.get("correct_answers", 0)
+    total_questions = user_data.get("total_questions", 0)
 
     hint_text = f"Разбей {example['b']} на {example['parts'][0]} и {example['parts'][1]}"
 
@@ -107,7 +119,12 @@ async def handle_decomposition(message: types.Message, state: FSMContext, attemp
     try:
         user_answer = int(message.text)
         if user_answer == example["result"]:
+            correct_answers += 1
+            total_questions += 1
+            user_data["correct_answers"] = correct_answers
+            user_data["total_questions"] = total_questions
             await message.answer(f"🌟 Отлично! {example['a']} {example['op']} {example['b']} = {example['result']}")
+            await message.answer(f"Твой счет: {correct_answers} из {total_questions}")
             await message.answer("Хочешь еще пример?", reply_markup=get_main_menu())
             await state.clear()
             return
@@ -151,6 +168,9 @@ async def handle_decomposition(message: types.Message, state: FSMContext, attemp
             await message.answer("Введи разбиение (два числа через пробел):")
         else:
             await message.answer(f"Правильное разбиение: {example['parts'][0]} и {example['parts'][1]}")
+            total_questions += 1
+            user_data["total_questions"] = total_questions
+            await message.answer(f"Твой счет: {correct_answers} из {total_questions}")
             await message.answer("Хочешь еще пример?", reply_markup=get_main_menu())
             await state.clear()
 
@@ -165,12 +185,22 @@ async def handle_answer(message: types.Message, state: FSMContext):
 
     example = user_data["current_example"]
 
+    # Получаем текущее количество баллов
+    correct_answers = user_data.get("correct_answers", 0)
+    total_questions = user_data.get("total_questions", 0)
+
     try:
         user_answer = int(message.text)
+        total_questions += 1
+        user_data["total_questions"] = total_questions
         if user_answer == example["result"]:
+            correct_answers += 1
+            user_data["correct_answers"] = correct_answers
             await message.answer(f"🌟 Отлично! {example['a']} {example['op']} {example['b']} = {example['result']}")
+            await message.answer(f"Твой счет: {correct_answers} из {total_questions}")
         else:
             await message.answer(f"❌ Неверно! Правильный ответ: {example['result']}")
+            await message.answer(f"Твой счет: {correct_answers} из {total_questions}")
     except ValueError:
         await message.answer("Пожалуйста, введи число.")
         await message.answer("Сколько получилось?")
@@ -195,5 +225,15 @@ async def new_example(message: types.Message, state: FSMContext):
 
 @router.message(lambda message: message.text and message.text.lower() == "сменить уровень")
 async def change_level(message: types.Message, state: FSMContext):
+    await message.answer("Выбери уровень сложности:", reply_markup=get_levels_keyboard())
+    await state.set_state(MathTraining.waiting_for_level)
+
+
+@router.message(lambda message: message.text and message.text.lower() == "сбросить счётчик очков")
+async def clear_score(message: types.Message, state: FSMContext):
+    user_data = user_sessions.get(message.from_user.id)
+    user_data["correct_answers"] = 0
+    user_data["total_questions"] = 0
+    await message.answer(f"Твой счет: 0 из 0")
     await message.answer("Выбери уровень сложности:", reply_markup=get_levels_keyboard())
     await state.set_state(MathTraining.waiting_for_level)

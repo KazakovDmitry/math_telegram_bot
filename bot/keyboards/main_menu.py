@@ -6,6 +6,7 @@ def get_main_menu():
         keyboard=[
             [KeyboardButton(text="Новый пример")],
             [KeyboardButton(text="Сменить уровень")],
+            [KeyboardButton(text="Сбросить счётчик очков")],
             [KeyboardButton(text="Помощь")]
         ],
         resize_keyboard=True
